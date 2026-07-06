@@ -15,6 +15,7 @@ use tentacle::{
     builder::{MetaBuilder, ServiceBuilder},
     context::{ProtocolContext, ProtocolContextMutRef, ServiceContext},
     multiaddr::{Multiaddr, Protocol},
+    quic::config::QuicConfig,
     secio::SecioKeyPair,
     service::{ProtocolHandle, ProtocolMeta, Service, ServiceEvent, TargetProtocol},
     traits::{ServiceHandle, ServiceProtocol},
@@ -97,7 +98,11 @@ impl HarnessHandle {
 
 #[async_trait]
 impl ServiceHandle for HarnessHandle {
-    async fn handle_error(&mut self, _context: &mut ServiceContext, error: tentacle::service::ServiceError) {
+    async fn handle_error(
+        &mut self,
+        _context: &mut ServiceContext,
+        error: tentacle::service::ServiceError,
+    ) {
         self.sink.send(HarnessEvent::ServiceError(format!("{error:?}")));
     }
 
@@ -134,8 +139,19 @@ pub fn build_service(
     channel_size: usize,
     max_connections: usize,
 ) -> Service<HarnessHandle, SecioKeyPair> {
+    build_service_with_options(sink, inbound_burst, channel_size, max_connections, None, false)
+}
+
+pub fn build_service_with_options(
+    sink: EventSink,
+    inbound_burst: usize,
+    channel_size: usize,
+    max_connections: usize,
+    max_frame_length: Option<usize>,
+    enable_quic: bool,
+) -> Service<HarnessHandle, SecioKeyPair> {
     let received_count = Arc::new(AtomicUsize::new(0));
-    ServiceBuilder::default()
+    let mut builder = ServiceBuilder::default()
         .insert_protocol(protocol_meta(
             ProtocolId::new(1),
             sink.clone(),
@@ -145,8 +161,17 @@ pub fn build_service(
         .handshake_type(SecioKeyPair::secp256k1_generated().into())
         .max_connection_number(max_connections)
         .set_channel_size(channel_size)
-        .timeout(Duration::from_secs(2))
-        .build(HarnessHandle::new(sink))
+        .timeout(Duration::from_secs(2));
+
+    if let Some(max_frame_length) = max_frame_length {
+        builder = builder.max_frame_length(max_frame_length);
+    }
+
+    if enable_quic {
+        builder = builder.quic_config(QuicConfig::default());
+    }
+
+    builder.build(HarnessHandle::new(sink))
 }
 
 pub fn start_tcp_server(
@@ -170,6 +195,92 @@ pub fn start_tcp_server(
     });
     let listen_addr = futures::executor::block_on(addr_receiver).unwrap();
     (listen_addr, receiver)
+}
+
+pub fn start_ws_server_with_frame_limit(
+    inbound_burst: usize,
+    channel_size: usize,
+    max_connections: usize,
+    max_frame_length: usize,
+) -> (Multiaddr, crossbeam_channel::Receiver<HarnessEvent>) {
+    let (sink, receiver) = EventSink::new();
+    let (addr_sender, addr_receiver) = channel::oneshot::channel::<Multiaddr>();
+    thread::spawn(move || {
+        let rt = tokio::runtime::Runtime::new().unwrap();
+        let mut service = build_service_with_options(
+            sink,
+            inbound_burst,
+            channel_size,
+            max_connections,
+            Some(max_frame_length),
+            false,
+        );
+        rt.block_on(async move {
+            let listen_addr = service
+                .listen("/ip4/127.0.0.1/tcp/0/ws".parse().unwrap())
+                .await
+                .unwrap();
+            addr_sender.send(listen_addr).unwrap();
+            service.run().await
+        });
+    });
+    let listen_addr = futures::executor::block_on(addr_receiver).unwrap();
+    (listen_addr, receiver)
+}
+
+pub fn start_quic_server(
+    inbound_burst: usize,
+    channel_size: usize,
+    max_connections: usize,
+) -> (Multiaddr, crossbeam_channel::Receiver<HarnessEvent>) {
+    let (sink, receiver) = EventSink::new();
+    let (addr_sender, addr_receiver) = channel::oneshot::channel::<Multiaddr>();
+    thread::spawn(move || {
+        let rt = tokio::runtime::Runtime::new().unwrap();
+        let mut service = build_service_with_options(
+            sink,
+            inbound_burst,
+            channel_size,
+            max_connections,
+            None,
+            true,
+        );
+        rt.block_on(async move {
+            let listen_addr = service
+                .listen("/ip4/127.0.0.1/udp/0/quic-v1".parse().unwrap())
+                .await
+                .unwrap();
+            addr_sender.send(listen_addr).unwrap();
+            service.run().await
+        });
+    });
+    let listen_addr = futures::executor::block_on(addr_receiver).unwrap();
+    (listen_addr, receiver)
+}
+
+pub fn run_quic_client(
+    addr: Multiaddr,
+    inbound_burst: usize,
+    channel_size: usize,
+    max_connections: usize,
+) -> crossbeam_channel::Receiver<HarnessEvent> {
+    let (sink, receiver) = EventSink::new();
+    thread::spawn(move || {
+        let rt = tokio::runtime::Runtime::new().unwrap();
+        let mut service = build_service_with_options(
+            sink,
+            inbound_burst,
+            channel_size,
+            max_connections,
+            None,
+            true,
+        );
+        rt.block_on(async move {
+            service.dial(addr, TargetProtocol::All).await.unwrap();
+            service.run().await
+        });
+    });
+    receiver
 }
 
 pub fn run_tcp_client(
@@ -202,6 +313,11 @@ pub fn socket_addr(listen_addr: &Multiaddr) -> SocketAddr {
         }
     }
     SocketAddr::new(ip.expect("ip component"), port.expect("tcp component"))
+}
+
+pub fn ws_url(listen_addr: &Multiaddr) -> String {
+    let socket = socket_addr(listen_addr);
+    format!("ws://{socket}")
 }
 
 pub fn stalled_tcp_connect(addr: SocketAddr) -> StdTcpStream {

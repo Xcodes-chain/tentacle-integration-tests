@@ -1681,6 +1681,7 @@ dependencies = [
  "log",
  "tentacle",
  "tokio",
+ "tokio-tungstenite",
 ]
 
 [[package]]

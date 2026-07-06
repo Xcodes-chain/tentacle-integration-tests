@@ -27,17 +27,19 @@ Validate the open PR set against realistic service-level behavior:
 | Area | Cases | Related PRs | Status |
 |---|---|---:|---|
 | Baseline service | TCP secio/yamux burst delivery | all | implemented |
-| Connection cap | stalled inbound half-open sockets count and release | nervosnetwork/tentacle#436, nervosnetwork/tentacle#463 | implemented |
+| Connection cap | stalled inbound half-open sockets count and release | nervosnetwork/tentacle#436 | implemented |
+| Connection cap | equality boundary and overflow fail-closed | nervosnetwork/tentacle#463 | planned |
 | Multiaddr | invalid raw P2P constructors panic; valid P2P round-trip | nervosnetwork/tentacle#460 | implemented |
 | Dial identity | spoofed pending `/p2p` does not block legitimate dial | nervosnetwork/tentacle#457 | planned |
 | Service budget | many `ServiceControl` clones share budget; close still flows | nervosnetwork/tentacle#449 | planned |
 | Substream write pressure | lower sink pending does not drain data but handles close | nervosnetwork/tentacle#440, nervosnetwork/tentacle#443, nervosnetwork/tentacle#448 | planned |
 | Pending bytes | dropped outbound messages return pending byte counter to zero | nervosnetwork/tentacle#446 | planned |
 | Yamux | WindowUpdate wakes write-only stream; half-close FIN cleans slot; write-stall timeout | nervosnetwork/tentacle#455, nervosnetwork/tentacle#458, nervosnetwork/tentacle#445 | planned |
-| WebSocket | configured max frame + prefix accepted; +1 rejected | nervosnetwork/tentacle#453 | planned |
+| WebSocket | configured max frame + prefix accepted; +1 rejected | nervosnetwork/tentacle#453 | implemented |
 | SOCKS DNS | `/dns4` proxied dial sends ATYP domain | nervosnetwork/tentacle#459 | planned |
 | TCP peek | short initial input does not spin runtime | nervosnetwork/tentacle#451 | planned after draft stabilizes |
-| QUIC | listen/dial, peer-id pin success/failure, bad handshake does not kill listener | nervosnetwork/tentacle#435 | planned |
+| QUIC | listen/dial burst smoke | nervosnetwork/tentacle#435 | implemented |
+| QUIC | peer-id pin success/failure, bad handshake does not kill listener | nervosnetwork/tentacle#435 | planned |
 
 The remaining planned cases are represented by ignored test skeletons in
 `tests/planned_pr_cases.rs` so upstream issues can reference stable case names
