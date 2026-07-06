@@ -12,7 +12,7 @@ Related PR: https://github.com/nervosnetwork/tentacle/pull/454
 
 ### Summary
 
-PR #454 replaces the `RecvBuf` enum in `tentacle-secio` with `bytes::Bytes`.
+PR nervosnetwork/tentacle#454 replaces the `RecvBuf` enum in `tentacle-secio` with `bytes::Bytes`.
 The current PR tests exercise `Bytes::advance()` itself, but they do not verify
 the changed `SecureStream::drain` / `recv_buf` partial-read behavior.
 
@@ -32,7 +32,7 @@ asserts:
 - Project: `Xcodes-chain/tentacle-integration-tests`
 - Local path: `/Users/xue/Xcodes-chain/tentacle-integration-tests`
 - Plan file: `docs/test-plan.md`
-- Matrix row: `Yamux and secio internals / #454`
+- Matrix row: `Yamux and secio internals / nervosnetwork/tentacle#454`
 
 ## 2. Add external WebSocket frame-limit integration case
 
@@ -42,7 +42,7 @@ Related PR: https://github.com/nervosnetwork/tentacle/pull/453
 
 ### Summary
 
-PR #453 applies `ServiceConfig::max_frame_length` to WebSocket handshakes.
+PR nervosnetwork/tentacle#453 applies `ServiceConfig::max_frame_length` to WebSocket handshakes.
 Review comments identified that the default length-delimited framing overhead
 must be accounted for and that tests should avoid duplicating the framing
 overhead constant.
@@ -62,7 +62,7 @@ Add an external service-level WebSocket test that:
 - Planned case: `websocket_accepts_limit_plus_prefix_and_rejects_plus_one`
 - Plan file: `docs/test-plan.md`
 
-## 3. Hold draft CPU-spin validation until PR #451 stabilizes
+## 3. Hold draft CPU-spin validation until PR nervosnetwork/tentacle#451 stabilizes
 
 Suggested repository: `nervosnetwork/tentacle`
 
@@ -70,7 +70,7 @@ Related PR: https://github.com/nervosnetwork/tentacle/pull/451
 
 ### Summary
 
-PR #451 is still draft, and the author noted that the current fix is not ideal
+PR nervosnetwork/tentacle#451 is still draft, and the author noted that the current fix is not ideal
 and is being improved. Keep the external integration case planned, but avoid
 treating it as a merge-blocking acceptance test until the PR is updated.
 

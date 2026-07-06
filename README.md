@@ -32,8 +32,8 @@ Run one case:
 ## Case Map
 
 - `tcp_service_can_exchange_burst_messages`: baseline TCP + secio + yamux message delivery.
-- `stalled_inbound_connections_count_toward_limit_and_release_capacity`: PR #436 / #463 connection-limit behavior, ignored by default.
-- `invalid_p2p_is_rejected_by_safe_constructors`: PR #460 multiaddr P2P invariant, ignored by default.
+- `stalled_inbound_connections_count_toward_limit_and_release_capacity`: PR nervosnetwork/tentacle#436 / nervosnetwork/tentacle#463 connection-limit behavior, ignored by default.
+- `invalid_p2p_is_rejected_by_safe_constructors`: PR nervosnetwork/tentacle#460 multiaddr P2P invariant, ignored by default.
 - `tests/planned_pr_cases.rs`: ignored skeletons for the remaining open PRs, used as stable references when filing upstream issues.
 
 Planned next cases are tracked in `docs/test-plan.md`.

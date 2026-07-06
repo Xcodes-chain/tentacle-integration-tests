@@ -7,7 +7,7 @@ fn invalid_p2p_protocol() -> Protocol<'static> {
 }
 
 #[test]
-#[ignore = "PR #460 regression case; run explicitly on the target PR branch"]
+#[ignore = "PR nervosnetwork/tentacle#460 regression case; run explicitly on the target PR branch"]
 #[should_panic(expected = "invalid p2p multihash bytes")]
 fn invalid_p2p_is_rejected_by_safe_constructors() {
     let _ = Multiaddr::from(invalid_p2p_protocol());

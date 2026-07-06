@@ -25,7 +25,7 @@ fn tcp_service_can_exchange_burst_messages() {
 }
 
 #[test]
-#[ignore = "PR #436/#463 regression case; run explicitly on the target PR branch"]
+#[ignore = "PR nervosnetwork/tentacle#436 / nervosnetwork/tentacle#463 regression case; run explicitly on the target PR branch"]
 fn stalled_inbound_connections_count_toward_limit_and_release_capacity() {
     const MAX_CONNECTIONS: usize = 2;
 
