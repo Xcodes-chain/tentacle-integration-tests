@@ -2,93 +2,68 @@
 
 Collected on 2026-07-06 from `nervosnetwork/tentacle` open PRs.
 
-This document is the working analysis for the external integration-test
-repository. The issue-sync version is kept in
+This document follows the actual open PRs, review state, CI state, and changed
+files from `nervosnetwork/tentacle`. The paste-ready sync version is
 `docs/acceptance-internal-1517-comment.md`.
 
-## Open PR Groups
+## State Summary
 
-### QUIC integration
+- Open PRs: 21.
+- Draft: #451.
+- Approved: #435, #454.
+- Changes requested: #443, #445.
+- CI test failures at collection time: #436, #449.
+- The rest are review-required with CI passing.
 
-- #435 `quic: ServiceBuilder integration`
-  - Adds public QUIC ServiceBuilder integration, docs, example, identity API cleanup, precise QUIC config errors, QUIC accept-loop resilience, and duplicate-dial parity.
-  - Test focus: TCP and QUIC coexistence, `/udp/.../quic-v1` listen/dial, PeerId pin success/failure, `NotConfigured`/`Misconfigured` errors, bad-client does not kill listener.
+## PR-by-PR Analysis
 
-### Connection lifecycle and shutdown
+| PR | Review / CI | Changed area | External validation focus |
+|---:|---|---|---|
+| #435 | Approved, CI pass | QUIC docs/example public usage | QUIC listen/dial, PeerId pin success/failure, bad client does not kill listener, clear NotConfigured/Misconfigured errors. |
+| #436 | Review required, CI Test fail | service connection cap before inbound handshake | Reproduce CI failure; stalled inbound sockets count toward max and release capacity after close/failure. |
+| #440 | Review required, CI pass | substream write backpressure | Data writes stop draining while lower sink pending; close/control events remain live. |
+| #443 | Changes requested, CI pass | session/quic event-count backpressure | Backpressure only data messages; `SessionClose`/`ProtocolClose` must not be blocked by full small-message queues. |
+| #445 | Changes requested, CI pass | yamux write-stall timeout | Idle connection must not timeout on first transient pending; sustained write stall must timeout. |
+| #446 | Review required, CI pass | pending byte accounting | Dropped outbound messages and cleanup paths decrement pending bytes. |
+| #448 | Review required, CI pass | substream expected-close cleanup | Common close errors suppress user error but still clean session/protocol state. |
+| #449 | Review required, CI Test fail | global service-task budget | Reproduce CI failure; cloned controls share one budget while control events still pass. |
+| #450 | Review required, CI pass | protocol task cancellation | Pending service/session protocol callback future is dropped on cancel/shutdown. |
+| #451 | Draft, CI pass | TCP short peek loop | Track only until ready; validate no CPU spin after draft stabilizes. |
+| #453 | Review required, CI pass | WebSocket frame limit plumbing | WS parser rejects oversize according to service frame limit and length-prefix overhead. |
+| #454 | Approved, CI pass | secio receive buffer | SecureStream partial reads/drain preserve exact bytes; avoid testing only `Bytes::advance`. |
+| #455 | Review required, CI pass | yamux WindowUpdate wake | Write-only stream blocked by zero window wakes on WindowUpdate without read polling. |
+| #456 | Review required, CI pass | Tokio listener socket option | Default listener does not enable SO_REUSEADDR; transformer opt-in still works. |
+| #457 | Review required, CI pass | dial dedup peer identity | Unauthenticated pending `/p2p` cannot suppress legitimate dial; authenticated dedup remains. |
+| #458 | Review required, CI pass | yamux half-close cleanup | `LocalClosing + FIN` emits close to parent session and releases stream slot. |
+| #459 | Review required, CI pass | SOCKS DNS dial path | Proxied DNS dial sends domain target to SOCKS server, no local DNS resolution. |
+| #460 | Review required, CI pass | multiaddr P2P construction | Invalid raw P2P bytes rejected by construction paths; valid PeerId round-trips. |
+| #461 | Review required, CI pass | service shutdown late events | PreShutdown rejects/cleans late handshake and listen completions. |
+| #463 | Review required, CI pass | connection limit boundary | Equality boundary is full; overflow fails closed. |
+| #464 | Review required, CI pass | raw inbound idle shutdown | Raw inbound handshake registers pending work so `forever(false)` does not exit early. |
 
-- #464 `Keep raw inbound handshakes alive during idle shutdown`
-  - Raw inbound handshakes now track pending service state so `forever(false)` does not shut down before handshake completion.
-  - Test focus: raw inbound session with no listeners/no active sessions remains alive until handshake resolves.
-- #463 `Fix max connection limit off-by-one check`
-  - Treat `active + pending == max_connection_number` as full; fail closed on overflow.
-  - Test focus: exactly-at-capacity inbound/outbound attempts are rejected.
-- #461 `Ignore late resource-creating events during shutdown`
-  - Ignores late handshake/listen completions after `PreShutdown`.
-  - Test focus: shutdown race with delayed handshake/listen completion creates no new sessions/listeners.
-- #457 `Deduplicate dials only by authenticated peer identity`
-  - Stops trusting pending `/p2p/<peer>` values for dial dedup; dedups only exact pending address or already-authenticated peer.
-  - Test focus: spoofed pending `/p2p` dial cannot suppress legitimate dial.
-- #436 `Enforce connection limits before inbound handshakes`
-  - Counts inbound half-open handshakes against connection cap and releases permit on failure/close.
-  - Implemented case: `stalled_inbound_connections_count_toward_limit_and_release_capacity`.
+## Current Validation Scope
 
-### Backpressure, cleanup, and resource accounting
+This round validates only open, non-draft PRs whose CI is currently successful.
 
-- #449 `Enforce global budget for service task backpressure`
-  - Adds shared budget across `ServiceControl` clones for counted service tasks while keeping control-plane tasks flowing.
-  - Test focus: many control clones cannot exceed aggregate queued message budget; shutdown/close still works when budget full.
-- #448 `Ensure substream errors always clean up session state`
-  - Expected connection-close errors suppress user error events but still emit close cleanup.
-  - Test focus: `BrokenPipe`/`UnexpectedEof` still removes substream/protocol state.
-- #446 `Fix stale pending-byte accounting on dropped outbound messages`
-  - Rolls back `pending_data_size` for messages dropped before substream acceptance or during cleanup.
-  - Test focus: closed/missing protocol stream and abnormal-session cleanup leave pending bytes at zero.
-- #443 `Backpressure small outbound messages by event count`
-  - Adds event-count backpressure for tiny messages while allowing high-priority control events.
-  - Test focus: full data queue defers `ProtocolMessage` but still processes `SessionClose`/`ProtocolClose`.
-- #440 `Propagate substream write backpressure`
-  - Stops draining data events into substream buffers while lower sink is pending, while preserving high-priority close.
-  - Test focus: stalled write side still handles close promptly.
+Included:
 
-### Yamux and secio internals
+- #435, #440, #443, #445, #446, #448, #450, #453, #454, #455, #456, #457, #458, #459, #460, #461, #463, #464
 
-- #458 `Ensure yamux streams notify session after half-close FIN`
-  - `LocalClosing + FIN` now emits `StreamEvent::Closed` so session stream counts are cleaned.
-  - Test focus: half-close then remote FIN frees stream slot and allows new stream.
-- #455 `Wake write-only yamux streams on WindowUpdate`
-  - Write-only stream registers writer waker so remote `WindowUpdate` wakes pending writes.
-  - Test focus: split/write-only stream blocked on zero window resumes after `WindowUpdate`.
-- #445 `Restore yamux write-stall timeout`
-  - Tracks current write-stall start rather than previous successful send.
-  - Test focus: idle connection does not false-timeout; actual persistent sink stall times out.
-- #454 `refactor(secio): replace RecvBuf enum with Bytes`
-  - Simplifies secio receive buffer to `Bytes`; review noted current unit tests only test upstream `Bytes::advance`.
-  - Risk: add test that exercises `SecureStream::drain`/partial reads, not just `Bytes`.
+Excluded from this round:
 
-### Transport and address handling
+- #436: open and non-draft, but CI Test is failing.
+- #449: open and non-draft, but CI Test is failing.
+- #451: draft.
 
-- #460 `Validate P2P bytes before serializing multiaddrs`
-  - Validates `Protocol::P2P` bytes in constructors.
-  - Implemented case: `invalid_p2p_is_rejected_by_safe_constructors`.
-- #459 `Avoid local DNS resolution for SOCKS proxy dials`
-  - Sends `/dns4`/`/dns6` hostnames to SOCKS proxy as ATYP domain.
-  - Test focus: fake SOCKS5 server observes domain target, no local DNS lookup.
-- #456 `Disable default SO_REUSEADDR on Tokio listeners`
-  - Makes reuse-address opt-in via socket transformer.
-  - Test focus: default listener socket reports `reuse_address == false` on Unix.
-- #453 `Apply service frame limit to WebSocket handshakes`
-  - Applies `max_frame_length` to tungstenite limits, accounting for default length-prefix overhead.
-  - Test focus: WS accepts payload at configured limit + prefix and rejects +1.
-- #451 `avoid CPU spin on short TCP peeks`
-  - Draft. Author says current fix is not ideal and improving.
-  - Test focus: short initial TCP input does not starve runtime and close/EOF logs are accurate.
+Execution priority:
 
-## Immediate Risks
+1. Run each PR's own targeted test command on its PR ref.
+2. Add external integration coverage where the PR touches public behavior.
+3. Treat #443 and #445 as CI-success but review-blocked; record the reviewer risk separately.
+4. Revisit #436/#449 as CI-failure reproduction tasks after this round.
 
-- #451 is draft and explicitly not final.
-- #454 still needs a stronger partial-read regression.
-- #453 has several comments around default framing overhead and test constant drift.
-- Many PRs overlap on backpressure/control-event behavior; integration testing should run related PRs together, not only one-by-one.
+Local validation results for this scope are recorded in
+`docs/validation-results-2026-07-06.md`.
 
 ## Local PR Refs
 

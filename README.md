@@ -43,3 +43,4 @@ Planned next cases are tracked in `docs/test-plan.md`.
 - `docs/pr-analysis.md`: working PR analysis.
 - `docs/test-plan.md`: integration matrix and issue template.
 - `docs/acceptance-internal-1517-comment.md`: paste-ready sync comment for `nervosnetwork/acceptance-internal#1517`.
+- `docs/validation-results-2026-07-06.md`: local validation results for open, non-draft, CI-success tentacle PRs.
