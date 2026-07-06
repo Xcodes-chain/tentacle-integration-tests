@@ -1,0 +1,26 @@
+[package]
+name = "tentacle-integration-tests"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.88.0"
+publish = false
+
+[dependencies]
+bytes = "1"
+crossbeam-channel = "0.5"
+env_logger = "0.11"
+futures = "0.3"
+log = "0.4"
+tokio = { version = "1", features = ["macros", "net", "rt-multi-thread", "time", "io-util"] }
+
+# Default local checkout used by this Codex workspace:
+# /Users/xue/Xcodes-chain/tentacle-integration-tests -> /Users/xue/nervosnetwork/tentacle/tentacle
+#
+# To validate a specific PR, checkout that PR in ../../nervosnetwork/tentacle
+# before running these tests, or replace this path with a git branch/rev.
+tentacle = { path = "../../nervosnetwork/tentacle/tentacle", features = ["ws", "tls", "unstable", "quic", "openssl-vendored"] }
+
+[features]
+default = []
+quic = []
+ws = []
