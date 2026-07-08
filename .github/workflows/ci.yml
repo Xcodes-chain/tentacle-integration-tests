@@ -10,11 +10,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Checkout tentacle
-        uses: actions/checkout@v4
-        with:
-          repository: nervosnetwork/tentacle
-          path: ../nervosnetwork/tentacle
+        run: |
+          mkdir -p ../../nervosnetwork
+          git clone --depth 1 https://github.com/nervosnetwork/tentacle ../../nervosnetwork/tentacle
       - uses: dtolnay/rust-toolchain@stable
       - name: Test
         run: cargo test --features ws,quic -- --nocapture
-
