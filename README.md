@@ -37,6 +37,7 @@ Run one case:
 - `quic_service_can_exchange_burst_messages`: PR nervosnetwork/tentacle#435 QUIC ServiceBuilder smoke coverage.
 - `websocket_rejects_message_over_service_frame_limit`: PR nervosnetwork/tentacle#453 WebSocket frame-limit behavior, ignored by default.
 - `websocket_accepts_message_at_service_frame_limit_plus_prefix`: WebSocket at-limit control case.
+- `idle_session_timeout_rearms_after_protocol_close`: PR nervosnetwork/tentacle#465 idle session timeout rearm behavior, ignored by default.
 - `tests/planned_pr_cases.rs`: ignored skeletons for the remaining open PRs, used as stable references when filing upstream issues.
 
 Planned next cases are tracked in `docs/test-plan.md`.
@@ -48,3 +49,4 @@ Planned next cases are tracked in `docs/test-plan.md`.
 - `docs/acceptance-internal-1517-comment.md`: paste-ready sync comment for `nervosnetwork/acceptance-internal#1517`.
 - `docs/validation-results-2026-07-06.md`: local validation results for open, non-draft, CI-success tentacle PRs.
 - `docs/external-case-results-2026-07-06.md`: external integration case results against master and selected PR refs.
+- `docs/external-case-results-2026-07-08.md`: external integration case results for nervosnetwork/tentacle#465.

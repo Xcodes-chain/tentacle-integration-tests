@@ -1,14 +1,15 @@
 # tentacle open PR 测试分析同步（修正版）
 
 同步位置：nervosnetwork/acceptance-internal#1517  
-分析对象：nervosnetwork/tentacle 当前 open PR，采集时间 2026-07-06  
+分析对象：nervosnetwork/tentacle 当前 open PR，采集时间 2026-07-06，2026-07-08 补充 nervosnetwork/tentacle#465  
 说明：这里仅用于跟进同步。实际缺陷应提到 `nervosnetwork/tentacle`，并 reference `Xcodes-chain/tentacle-integration-tests` 中的对应 case。
 
 上一版分组分析有偏差：它按我预设的测试主题归并，容易把结论写成“模块风险判断”。本版改为以 `nervosnetwork/tentacle` open PR 的实际状态、PR 描述、diff 文件、review/CI 状态为主。
 
 ## 状态总览
 
-当前 open PR 共 21 个。
+2026-07-08 重新同步后，当前 open PR 共 20 个：19 个 non-draft，1 个 draft。
+其中 nervosnetwork/tentacle#465 是新增 open/non-draft/CI pass；nervosnetwork/tentacle#454 和 nervosnetwork/tentacle#458 已合并，不再是 open PR。
 
 状态说明：
 
@@ -18,13 +19,20 @@
 - nervosnetwork/tentacle#445：Changes requested，问题集中在 yamux write-stall timeout 计时点可能导致 idle 后首次 pending 被误判超时。
 - nervosnetwork/tentacle#451：Draft，作者已说明当前修复还不理想，暂不作为最终验证目标。
 - nervosnetwork/tentacle#435：Approved，QUIC ServiceBuilder integration，可作为 QUIC 集成验证入口。
-- nervosnetwork/tentacle#454：Approved，secio receive buffer refactor，可补充外部 partial-read 行为验证。
+- nervosnetwork/tentacle#454：已合并，不再是 open PR。
 
 本轮先验证：open + non-draft + CI 成功的 PR。
 
 纳入本轮：
 
-- nervosnetwork/tentacle#435, nervosnetwork/tentacle#440, nervosnetwork/tentacle#443, nervosnetwork/tentacle#445, nervosnetwork/tentacle#446, nervosnetwork/tentacle#448, nervosnetwork/tentacle#450, nervosnetwork/tentacle#453, nervosnetwork/tentacle#454, nervosnetwork/tentacle#455, nervosnetwork/tentacle#456, nervosnetwork/tentacle#457, nervosnetwork/tentacle#458, nervosnetwork/tentacle#459, nervosnetwork/tentacle#460, nervosnetwork/tentacle#461, nervosnetwork/tentacle#463, nervosnetwork/tentacle#464
+- nervosnetwork/tentacle#435, nervosnetwork/tentacle#440, nervosnetwork/tentacle#443, nervosnetwork/tentacle#445, nervosnetwork/tentacle#446, nervosnetwork/tentacle#448, nervosnetwork/tentacle#450, nervosnetwork/tentacle#453, nervosnetwork/tentacle#455, nervosnetwork/tentacle#456, nervosnetwork/tentacle#459, nervosnetwork/tentacle#460, nervosnetwork/tentacle#461, nervosnetwork/tentacle#463, nervosnetwork/tentacle#464, nervosnetwork/tentacle#465
+- 2026-07-08 新增：nervosnetwork/tentacle#465，open/non-draft/CI pass。
+
+当前 open 但不在 CI-success 子集：
+
+- nervosnetwork/tentacle#436：open/non-draft，但 CI Test 当前失败。
+- nervosnetwork/tentacle#449：open/non-draft，但 CI Test 当前失败。
+- nervosnetwork/tentacle#457：open/non-draft，但 CI Clippy 当前失败。
 
 暂不纳入本轮：
 
@@ -47,16 +55,15 @@
 | nervosnetwork/tentacle#450 | open | Review required, CI pass | `protocol_handle_stream.rs`, `service.rs` | protocol callback future 可取消。验证 session-level 和 service-level protocol task 在 shutdown/cancel 时能 drop pending future。 |
 | nervosnetwork/tentacle#451 | draft | Draft, CI pass | `tcp_base_listen.rs` | TCP protocol selection 短 peek 防 CPU spin。作者已说当前 fix 不理想，等 ready 后再纳入最终回归；当前只保留 draft 跟踪 case。 |
 | nervosnetwork/tentacle#453 | open | Review required, CI pass | `service.rs`, TCP/WS transports | WebSocket handshake 应使用 `ServiceConfig::max_frame_length`。验证 tungstenite 边界拒绝超限 payload，注意 tentacle length-prefix overhead。 |
-| nervosnetwork/tentacle#454 | open | Approved, CI pass | `secio/src/codec/secure_stream.rs` | `RecvBuf` 替换为 `Bytes`。验证目标不是 `Bytes::advance` 本身，而是 `SecureStream` partial read/drain 不丢、不重、不退化。 |
 | nervosnetwork/tentacle#455 | open | Review required, CI pass | `yamux/src/stream.rs` | write-only yamux stream 在 send window 为 0 时应被 remote `WindowUpdate` 唤醒。验证 split/write-only 场景不依赖 reader polling。 |
 | nervosnetwork/tentacle#456 | open | Review required, CI pass | `tokio_runtime/mod.rs` | 默认不再开 `SO_REUSEADDR`。验证默认 listener socket option 为 false，socket transformer opt-in 仍可开启。 |
-| nervosnetwork/tentacle#457 | open | Review required, CI pass | `service.rs`, dial/kill/peer_id tests | pending `/p2p/<peer>` 不再作为 authenticated peer 去重依据。验证伪造 pending dial 不能阻止后续合法 peer dial，已认证 session 的 peer-id dedup 仍保留。 |
-| nervosnetwork/tentacle#458 | open | Review required, CI pass | `yamux/src/stream.rs`, `test_session_protocol_order.rs` | `LocalClosing + FIN` 应通知 parent session close。验证 stream slot 被释放，`max_stream_count` 不被关闭 stream 占住。 |
+| nervosnetwork/tentacle#457 | open | Review required, CI Clippy fail | `service.rs`, dial/kill/peer_id tests | pending `/p2p/<peer>` 不再作为 authenticated peer 去重依据。验证伪造 pending dial 不能阻止后续合法 peer dial，已认证 session 的 peer-id dedup 仍保留；当前先不放入 CI-success 验证子集。 |
 | nervosnetwork/tentacle#459 | open | Review required, CI pass | Tokio runtime/TCP transport/proxy path | SOCKS proxy 下 `/dns4`/`/dns6` 不应本地 DNS 解析。验证 fake SOCKS5 server 收到 ATYP domain。 |
 | nervosnetwork/tentacle#460 | open | Review required, CI pass | `multiaddr/src/protocol.rs`, multiaddr tests | `Protocol::P2P` raw bytes 构造路径需要校验。验证 `Multiaddr::from`/`push`/`FromIterator` 对 invalid bytes 拒绝，合法 peer id round-trip 正常。 |
 | nervosnetwork/tentacle#461 | open | Review required, CI pass | `tentacle/src/service.rs` | `PreShutdown` 后 late handshake/listen completion 不能再创建 session/listener。验证 late completion 被 close/reject。 |
 | nervosnetwork/tentacle#463 | open | Review required, CI pass | `tentacle/src/service.rs` | connection limit equality boundary：`active + pending == max` 即满。验证等于上限时拒绝新连接，overflow fail-closed。 |
 | nervosnetwork/tentacle#464 | open | Review required, CI pass | `service.rs`, `service/helper.rs`, `session.rs` | raw inbound session handshake 要注册 pending work，避免 `forever(false)` idle shutdown 抢先退出。验证 raw inbound handshake 未完成时 service 不应 idle shutdown。 |
+| nervosnetwork/tentacle#465 | open | Review required, CI pass | `session.rs`, `quic/session.rs` | idle timeout 触发时如果仍有 protocol substream，需要重新 arm；最后一个 protocol substream 关闭后，空 session 应被 timeout 回收。 |
 
 ## 测试执行顺序建议
 
@@ -80,6 +87,7 @@
 - nervosnetwork/tentacle#460：`invalid_p2p_is_rejected_by_safe_constructors`。
 - nervosnetwork/tentacle#435：`quic_service_can_exchange_burst_messages`。
 - nervosnetwork/tentacle#453：`websocket_rejects_message_over_service_frame_limit`。
+- nervosnetwork/tentacle#465：`idle_session_timeout_rearms_after_protocol_close`。
 - 其他 open PR：已放置 ignored skeleton case，作为后续 issue reference 的稳定 case name。
 
 运行方式：

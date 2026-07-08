@@ -11,13 +11,15 @@ use std::{
 use bytes::Bytes;
 use futures::channel;
 use tentacle::{
-    ProtocolId, async_trait,
+    ProtocolId, SessionId, async_trait,
     builder::{MetaBuilder, ServiceBuilder},
     context::{ProtocolContext, ProtocolContextMutRef, ServiceContext},
     multiaddr::{Multiaddr, Protocol},
     quic::config::QuicConfig,
     secio::SecioKeyPair,
-    service::{ProtocolHandle, ProtocolMeta, Service, ServiceEvent, TargetProtocol},
+    service::{
+        ProtocolHandle, ProtocolMeta, Service, ServiceAsyncControl, ServiceEvent, TargetProtocol,
+    },
     traits::{ServiceHandle, ServiceProtocol},
 };
 
@@ -25,8 +27,8 @@ pub const TEST_TIMEOUT: Duration = Duration::from_secs(10);
 
 #[derive(Clone, Debug)]
 pub enum HarnessEvent {
-    SessionOpen,
-    SessionClose,
+    SessionOpen { session_id: SessionId },
+    SessionClose { session_id: SessionId },
     Received(Vec<u8>),
     ServiceError(String),
 }
@@ -108,8 +110,16 @@ impl ServiceHandle for HarnessHandle {
 
     async fn handle_event(&mut self, _context: &mut ServiceContext, event: ServiceEvent) {
         match event {
-            ServiceEvent::SessionOpen { .. } => self.sink.send(HarnessEvent::SessionOpen),
-            ServiceEvent::SessionClose { .. } => self.sink.send(HarnessEvent::SessionClose),
+            ServiceEvent::SessionOpen { session_context } => {
+                self.sink.send(HarnessEvent::SessionOpen {
+                    session_id: session_context.id,
+                })
+            }
+            ServiceEvent::SessionClose { session_context } => {
+                self.sink.send(HarnessEvent::SessionClose {
+                    session_id: session_context.id,
+                })
+            }
             _ => {}
         }
     }
@@ -289,16 +299,31 @@ pub fn run_tcp_client(
     channel_size: usize,
     max_connections: usize,
 ) -> crossbeam_channel::Receiver<HarnessEvent> {
+    let (_control, receiver) =
+        run_tcp_client_with_control(addr, inbound_burst, channel_size, max_connections);
+    receiver
+}
+
+pub fn run_tcp_client_with_control(
+    addr: Multiaddr,
+    inbound_burst: usize,
+    channel_size: usize,
+    max_connections: usize,
+) -> (ServiceAsyncControl, crossbeam_channel::Receiver<HarnessEvent>) {
     let (sink, receiver) = EventSink::new();
+    let (control_sender, control_receiver) = channel::oneshot::channel::<ServiceAsyncControl>();
     thread::spawn(move || {
         let rt = tokio::runtime::Runtime::new().unwrap();
         let mut service = build_service(sink, inbound_burst, channel_size, max_connections);
+        let control = service.control().clone();
+        control_sender.send(control).unwrap();
         rt.block_on(async move {
             service.dial(addr, TargetProtocol::All).await.unwrap();
             service.run().await
         });
     });
-    receiver
+    let control = futures::executor::block_on(control_receiver).unwrap();
+    (control, receiver)
 }
 
 pub fn socket_addr(listen_addr: &Multiaddr) -> SocketAddr {
