@@ -274,7 +274,19 @@ pub fn run_quic_client(
     channel_size: usize,
     max_connections: usize,
 ) -> crossbeam_channel::Receiver<HarnessEvent> {
+    let (_control, receiver) =
+        run_quic_client_with_control(addr, inbound_burst, channel_size, max_connections);
+    receiver
+}
+
+pub fn run_quic_client_with_control(
+    addr: Multiaddr,
+    inbound_burst: usize,
+    channel_size: usize,
+    max_connections: usize,
+) -> (ServiceAsyncControl, crossbeam_channel::Receiver<HarnessEvent>) {
     let (sink, receiver) = EventSink::new();
+    let (control_sender, control_receiver) = channel::oneshot::channel::<ServiceAsyncControl>();
     thread::spawn(move || {
         let rt = tokio::runtime::Runtime::new().unwrap();
         let mut service = build_service_with_options(
@@ -285,12 +297,15 @@ pub fn run_quic_client(
             None,
             true,
         );
+        let control = service.control().clone();
+        control_sender.send(control).unwrap();
         rt.block_on(async move {
             service.dial(addr, TargetProtocol::All).await.unwrap();
             service.run().await
         });
     });
-    receiver
+    let control = futures::executor::block_on(control_receiver).unwrap();
+    (control, receiver)
 }
 
 pub fn run_tcp_client(

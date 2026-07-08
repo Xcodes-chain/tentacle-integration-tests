@@ -37,7 +37,8 @@ Run one case:
 - `quic_service_can_exchange_burst_messages`: PR nervosnetwork/tentacle#435 QUIC ServiceBuilder smoke coverage.
 - `websocket_rejects_message_over_service_frame_limit`: PR nervosnetwork/tentacle#453 WebSocket frame-limit behavior, ignored by default.
 - `websocket_accepts_message_at_service_frame_limit_plus_prefix`: WebSocket at-limit control case.
-- `idle_session_timeout_rearms_after_protocol_close`: PR nervosnetwork/tentacle#465 idle session timeout rearm behavior, ignored by default.
+- `tcp_idle_session_timeout_rearms_after_protocol_close`: PR nervosnetwork/tentacle#465 TCP/yamux idle session timeout rearm behavior, ignored by default.
+- `quic_idle_session_timeout_rearms_after_protocol_close`: PR nervosnetwork/tentacle#465 QUIC idle session timeout rearm behavior, ignored by default.
 - `tests/planned_pr_cases.rs`: ignored skeletons for the remaining open PRs, used as stable references when filing upstream issues.
 
 Planned next cases are tracked in `docs/test-plan.md`.

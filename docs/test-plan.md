@@ -35,7 +35,7 @@ Validate the open PR set against realistic service-level behavior:
 | Substream write pressure | lower sink pending does not drain data but handles close | nervosnetwork/tentacle#440, nervosnetwork/tentacle#443, nervosnetwork/tentacle#448 | planned |
 | Pending bytes | dropped outbound messages return pending byte counter to zero | nervosnetwork/tentacle#446 | planned |
 | Yamux | WindowUpdate wakes write-only stream; half-close FIN cleans slot; write-stall timeout | nervosnetwork/tentacle#455, nervosnetwork/tentacle#458, nervosnetwork/tentacle#445 | planned |
-| Session idle timeout | timeout re-arms after the first check fires while protocol substreams are still active | nervosnetwork/tentacle#465 | implemented |
+| Session idle timeout | TCP/yamux and QUIC timeout re-arms after the first check fires while protocol substreams are still active | nervosnetwork/tentacle#465 | implemented |
 | WebSocket | configured max frame + prefix accepted; +1 rejected | nervosnetwork/tentacle#453 | implemented |
 | SOCKS DNS | `/dns4` proxied dial sends ATYP domain | nervosnetwork/tentacle#459 | planned |
 | TCP peek | short initial input does not spin runtime | nervosnetwork/tentacle#451 | planned after draft stabilizes |

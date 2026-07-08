@@ -2,15 +2,41 @@ use std::time::{Duration, Instant};
 
 use tentacle::ProtocolId;
 use tentacle_integration_tests::{
-    HarnessEvent, run_tcp_client_with_control, start_tcp_server,
+    HarnessEvent, run_quic_client_with_control, run_tcp_client_with_control, start_quic_server,
+    start_tcp_server,
 };
 
 #[test]
 #[ignore = "PR nervosnetwork/tentacle#465 regression case; run explicitly on the target PR branch"]
-fn idle_session_timeout_rearms_after_protocol_close() {
+fn tcp_idle_session_timeout_rearms_after_protocol_close() {
     let (addr, server_events) = start_tcp_server(0, 8, 8);
     let (client_control, client_events) = run_tcp_client_with_control(addr, 0, 8, 8);
 
+    assert_idle_session_closes_after_protocol_close(
+        client_control,
+        client_events,
+        server_events,
+    );
+}
+
+#[test]
+#[ignore = "PR nervosnetwork/tentacle#465 QUIC regression case; run explicitly on the target PR branch"]
+fn quic_idle_session_timeout_rearms_after_protocol_close() {
+    let (addr, server_events) = start_quic_server(0, 8, 8);
+    let (client_control, client_events) = run_quic_client_with_control(addr, 0, 8, 8);
+
+    assert_idle_session_closes_after_protocol_close(
+        client_control,
+        client_events,
+        server_events,
+    );
+}
+
+fn assert_idle_session_closes_after_protocol_close(
+    client_control: tentacle::service::ServiceAsyncControl,
+    client_events: crossbeam_channel::Receiver<HarnessEvent>,
+    server_events: crossbeam_channel::Receiver<HarnessEvent>,
+) {
     let client_session_id = recv_session_open(&client_events);
 
     std::thread::sleep(Duration::from_millis(2500));

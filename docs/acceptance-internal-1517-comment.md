@@ -87,7 +87,8 @@
 - nervosnetwork/tentacle#460：`invalid_p2p_is_rejected_by_safe_constructors`。
 - nervosnetwork/tentacle#435：`quic_service_can_exchange_burst_messages`。
 - nervosnetwork/tentacle#453：`websocket_rejects_message_over_service_frame_limit`。
-- nervosnetwork/tentacle#465：`idle_session_timeout_rearms_after_protocol_close`。
+- nervosnetwork/tentacle#465：`tcp_idle_session_timeout_rearms_after_protocol_close`。
+- nervosnetwork/tentacle#465：`quic_idle_session_timeout_rearms_after_protocol_close`。
 - 其他 open PR：已放置 ignored skeleton case，作为后续 issue reference 的稳定 case name。
 
 运行方式：
