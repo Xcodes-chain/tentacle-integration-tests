@@ -51,3 +51,4 @@ Planned next cases are tracked in `docs/test-plan.md`.
 - `docs/validation-results-2026-07-06.md`: local validation results for open, non-draft, CI-success tentacle PRs.
 - `docs/external-case-results-2026-07-06.md`: external integration case results against master and selected PR refs.
 - `docs/external-case-results-2026-07-08.md`: external integration case results for nervosnetwork/tentacle#465.
+- `docs/release-0.7.6-results-2026-07-09.md`: release validation for `nervosnetwork/tentacle@0.7.6`.

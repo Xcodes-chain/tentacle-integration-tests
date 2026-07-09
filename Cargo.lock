@@ -1637,7 +1637,7 @@ dependencies = [
 
 [[package]]
 name = "tentacle"
-version = "0.7.5"
+version = "0.7.6"
 dependencies = [
  "async-trait",
  "bytes",
@@ -1686,7 +1686,7 @@ dependencies = [
 
 [[package]]
 name = "tentacle-multiaddr"
-version = "0.3.6"
+version = "0.3.7"
 dependencies = [
  "arrayref",
  "bs58",
@@ -1700,7 +1700,7 @@ dependencies = [
 
 [[package]]
 name = "tentacle-secio"
-version = "0.6.7"
+version = "0.6.8"
 dependencies = [
  "bs58",
  "bytes",
@@ -1892,7 +1892,7 @@ dependencies = [
 
 [[package]]
 name = "tokio-yamux"
-version = "0.3.18"
+version = "0.3.19"
 dependencies = [
  "bytes",
  "futures",
